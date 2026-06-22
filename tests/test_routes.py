@@ -123,4 +123,65 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-    # ADD YOUR TEST CASES HERE ...
+    ######################################################################
+    # 1. TEST LIST ALL ACCOUNTS
+    ######################################################################
+    def test_get_account_list(self):
+        """It should Get a list of Accounts"""
+        self._create_accounts(5)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), 5)
+
+    ######################################################################
+    # 2. TEST READ AN ACCOUNT
+    ######################################################################
+    def test_read_an_account(self):
+        """It should Read a single Account"""
+        account = self._create_accounts(1)[0]
+        response = self.client.get(f"{BASE_URL}/{account.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(data["name"], account.name)
+
+    def test_get_account_not_found(self):
+        """It should not Read an Account that is not found"""
+        response = self.client.get(f"{BASE_URL}/0")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    ######################################################################
+    # 3. TEST UPDATE AN ACCOUNT
+    ######################################################################
+    def test_update_account(self):
+        """It should Update an existing Account"""
+        test_account = AccountFactory()
+        response = self.client.post(BASE_URL, json=test_account.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        new_account = response.get_json()
+        new_account["name"] = "Something New"
+        response = self.client.put(f"{BASE_URL}/{new_account['id']}", json=new_account)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_account = response.get_json()
+        self.assertEqual(updated_account["name"], "Something New")
+
+    def test_update_account_not_found(self):
+        """It should not Update an Account that is not found"""
+        test_account = AccountFactory()
+        response = self.client.put(f"{BASE_URL}/0", json=test_account.serialize())
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    ######################################################################
+    # 4. TEST DELETE AN ACCOUNT
+    ######################################################################
+    def test_delete_account(self):
+        """It should Delete an Account"""
+        account = self._create_accounts(1)[0]
+        response = self.client.delete(f"{BASE_URL}/{account.id}")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_account_not_found(self):
+        """It should return 204 when Deleting an Account that does not exist"""
+        response = self.client.delete(f"{BASE_URL}/0")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
