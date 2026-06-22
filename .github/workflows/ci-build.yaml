@@ -34,13 +34,17 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r requirements.txt
 
-      - name: Run Linting
+      - name: Run Linting with Flake8
         run: |
           flake8 service tests
+
+      - name: Run Linting with Pylint
+        run: |
           pylint service tests
 
       - name: Run Unit Tests with Coverage
         env:
-          DATABASE_URI: postgresql://postgres:pgs3cr3t@localhost:5432/testdb
+          DATABASE_URI: postgresql://postgres:pgs3cr3t@postgres:5432/testdb
+          FLASK_ENV: test
         run: |
           nosetests
