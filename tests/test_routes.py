@@ -215,4 +215,3 @@ class TestAccountService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # تحقق من وجود رأس CORS
         self.assertEqual(response.headers.get('Access-Control-Allow-Origin'), '*')
-        
