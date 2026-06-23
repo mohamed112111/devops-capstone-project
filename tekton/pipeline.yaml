@@ -1,14 +1,6 @@
-#
-# This pipeline needs the following tasks from Tekton Catalog
-#   - git-clone
-#   - flake8
-# And the custom task:
-#   - nose
-#
----
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
-metadata:  
+metadata:
   name: cd-pipeline
 spec:
   workspaces:
@@ -17,19 +9,19 @@ spec:
     - name: repo-url
     - name: branch
       default: main
-    - name: build-image # المعلمة الجديدة لالتقاط مسار الصورة
+    - name: build-image
   tasks:
     - name: init
       workspaces:
         - name: source
-          workspace: pipeline-workspace          
+          workspace: pipeline-workspace
       taskRef:
         name: cleanup
 
     - name: clone
       workspaces:
         - name: output
-          workspace: pipeline-workspace          
+          workspace: pipeline-workspace
       taskRef:
         name: git-clone
       params:
@@ -74,29 +66,10 @@ spec:
           workspace: pipeline-workspace
       taskRef:
         name: buildah
-        kind: ClusterTask # تحديد أنها مهمة مشتركة على مستوى الكلاستر
+        kind: ClusterTask
       params:
       - name: IMAGE
         value: "$(params.build-image)"
       runAfter:
+        - tests
         - lint
-        - tests # لن تبدأ إلا بعد نجاح الفحص والاختبار معاً
-
-    - name: deploy
-      workspaces:
-        - name: manifest-dir
-          workspace: pipeline-workspace
-      taskRef:
-        name: openshift-client
-        kind: ClusterTask
-      params:
-        - name: SCRIPT
-          value: |
-            echo "Updating manifest..."
-            sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
-            cat deploy/deployment.yaml
-            echo "Deploying to OpenShift..."
-            oc apply -f deploy/
-            oc get pods -l app=accounts
-      runAfter:
-        - build
